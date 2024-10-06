@@ -1,0 +1,75 @@
+class CompactMatrix:
+    def __init__(self, rows=None, cols=None, filePath=None):
+        if filePath:
+            self.loadFromFile(filePath)
+        else:
+            self.rows = rows
+            self.cols = cols
+            self.data = {}
+
+    def loadFromFile(self, filePath):
+        self.data = {}
+        with open(filePath, 'r') as file:
+            lines = file.readlines()
+            self.rows = int(lines[0].split('=')[1].strip())
+            self.cols = int(lines[1].split('=')[1].strip())
+            for line in lines[2:]:
+                if line.strip():
+                    row, col, val = eval(line.strip())
+                    self.data[(row, col)] = val
+
+    def getValue(self, row, col):
+        return self.data.get((row, col), 0)
+
+    def setValue(self, row, col, val):
+        if val != 0:
+            self.data[(row, col)] = val
+        elif (row, col) in self.data:
+            del self.data[(row, col)]
+
+    def add(self, other):
+        if self.rows != other.rows or self.cols != other.cols:
+            raise ValueError("Matrix dimensions do not match for addition.")
+        result = CompactMatrix(self.rows, self.cols)
+        allKeys = set(self.data.keys()).union(set(other.data.keys()))
+        for key in allKeys:
+            result.setValue(key[0], key[1], self.getValue(*key) + other.getValue(*key))
+        return result
+
+    def subtract(self, other):
+        if self.rows != other.rows or self.cols != other.cols:
+            raise ValueError("Matrix dimensions do not match for subtraction.")
+        result = CompactMatrix(self.rows, self.cols)
+        allKeys = set(self.data.keys()).union(set(other.data.keys()))
+        for key in allKeys:
+            result.setValue(key[0], key[1], self.getValue(*key) - other.getValue(*key))
+        return result
+
+    def multiply(self, other):
+        if self.cols != other.rows:
+            raise ValueError("Matrix dimensions do not match for multiplication.")
+        result = CompactMatrix(self.rows, other.cols)
+        for (i, j) in self.data:
+            for k in range(other.cols):
+                result.setValue(i, k, result.getValue(i, k) + self.getValue(i, j) * other.getValue(j, k))
+        return result
+
+    def saveToFile(self, filePath):
+        with open(filePath, 'w') as file:
+            file.write(f"rows={self.rows}\n")
+            file.write(f"cols={self.cols}\n")
+            for (row, col), val in self.data.items():
+                file.write(f"({row}, {col}, {val})\n")
+
+
+matrix1 = CompactMatrix(filePath="sparse-matrix/sample_input_for_students/easy_sample_01_3.txt")
+matrix2 = CompactMatrix(filePath="sparse-matrix/sample_input_for_students/easy_sample_01_3.txt")
+
+result_add = matrix1.add(matrix2)
+result_add.saveToFile("result_add.txt")
+
+result_subtract = matrix1.subtract(matrix2)
+result_subtract.saveToFile("result_subtract.txt")
+
+result_multiply = matrix1.multiply(matrix2)
+result_multiply.saveToFile("result_multiply.txt")
